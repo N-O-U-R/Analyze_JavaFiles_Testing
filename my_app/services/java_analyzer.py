@@ -78,9 +78,9 @@ def analyze_java_file(file_path):
 
 
 def analyze_java_files_in_directory(directory_path, repo_url):
-    # Assuming the Repository instance does not exist, create it
     repository, created = Repository.objects.get_or_create(url=repo_url)
-    
+    if not created:
+        repository.java_dosyalari.all().delete()
     for root, dirs, files in os.walk(directory_path):
         for file in files:
             if file.endswith(".java") and is_class_file(os.path.join(root, file)):

@@ -1,0 +1,32 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repository Analysis</title>
+    <link rel="stylesheet" href="{% static 'my_app/styles.css' %}">
+</head>
+
+<body>
+    <div class="container">
+        {% block content %}
+        <h2>Analysis for {{ repository.url }}</h2>
+        <hr>
+        {% for java_file in java_files %}
+        <p><strong>Sınıf Adı:</strong> {{ java_file.sinif_adi }}</p>
+        <p><strong>Javadoc Yorum Satır Sayısı:</strong> {{ java_file.javadoc_yorum_satir_sayisi }}</p>
+        <p><strong>Yorum Satır Sayısı:</strong> {{ java_file.yorum_satir_sayisi }}</p>
+        <p><strong>Kod Satırı Sayısı:</strong> {{ java_file.kod_satir_sayisi }}</p>
+        <p><strong>Toplam Satır Sayısı:</strong> {{ java_file.toplam_satir_sayisi }}</p>
+        <p><strong>Fonksiyon Sayısı:</strong> {{ java_file.fonksiyon_sayisi }}</p>
+        <p><strong>Yorum Sapma Yuzdesi:</strong> {{ java_file.yorum_sapma_yuzdesi }}</p>
+        <hr>
+        {% endfor %}
+        {% endblock %}
+    </div>
+</body>
+
+</html>
