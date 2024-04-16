@@ -1,5 +1,4 @@
 import os
-import re
 import django
 django.setup()
 from my_app.models import Repository, JavaDosyasi
