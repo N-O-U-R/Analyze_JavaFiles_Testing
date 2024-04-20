@@ -1,5 +1,6 @@
 import os
 import django
+import re
 django.setup()
 from my_app.models import Repository, JavaDosyasi
 from django.utils.timezone import now
@@ -7,9 +8,14 @@ from django.utils.timezone import now
 def is_class_file(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
         content = file.read()
-        if "class" in content:
-            return True
+
+    class_pattern = r'^(?:\s*(?:public|protected|private|abstract|static|final)\s+)*\s*class\s+\w+\s*(?:<.*?>)?\s*(?:extends\s+\w+\s*(?:<.*?>)?\s*)?(?:implements\s+\w+(?:<.*?>)?(?:,\s*\w+(?:<.*?>)?\s*)*)?\s*{'
+
+    if re.search(class_pattern, content, re.MULTILINE):
+        return True
+
     return False
+
 
 def analyze_java_file(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
@@ -18,42 +24,70 @@ def analyze_java_file(file_path):
     javadoc_comments, single_line_comments, multi_line_comments = 0, 0, 0
     code_lines, total_lines = 0, len(lines)
     functions = 0
+    possible_function = False  
     in_javadoc_comment, in_multi_line_comment = False, False
 
     for line in lines:
         stripped_line = line.strip()
-        if in_javadoc_comment:
+
+        if "//" in stripped_line and not in_multi_line_comment and not in_javadoc_comment:  # Check for inline single-line comments
+            single_line_comments += 1
+            if not stripped_line.startswith("//"):  # Count as code if not only a comment
+                code_lines += 1
+            continue
+
+        if "/**" in stripped_line and "*/" in stripped_line and not stripped_line.startswith("/**/"):
+            javadoc_comments += 1 
+            if not stripped_line.startswith("//") or not stripped_line.startswith("/*"):
+                code_lines += 1
+            continue
+        elif "/*" in stripped_line and "*/" in stripped_line:
+            multi_line_comments += 1 
+            if not stripped_line.startswith("//") or not stripped_line.startswith("/**"):
+                code_lines += 1
+            continue
+
+        elif stripped_line.startswith("/**") and not in_multi_line_comment:
+            in_javadoc_comment = True
+            continue  # Skip the opening of Javadoc comments
+        elif stripped_line.startswith("/*") and not in_javadoc_comment:
+            in_multi_line_comment = True
+            continue  # Skip the opening of multiline comments
+        
+
+        elif in_javadoc_comment:
             javadoc_comments += 1
             if stripped_line.endswith("*/"):
                 in_javadoc_comment = False
                 javadoc_comments -= 1  # Do not count the closing tag of Javadoc
             continue
-        elif stripped_line.startswith("/**"):
-            in_javadoc_comment = True
-            continue  # Skip the opening of Javadoc comments
+
         elif in_multi_line_comment:
             multi_line_comments += 1
             if stripped_line.endswith("*/"):
                 in_multi_line_comment = False
                 multi_line_comments -= 1  # Do not count the closing tag of multiline comments
             continue
-        elif stripped_line.startswith("/*"):
-            in_multi_line_comment = True
-            continue  # Skip the opening of multiline comments
 
-        if "//" in stripped_line:  # Check for inline single-line comments
-            single_line_comments += 1
-            if not stripped_line.startswith("//"):  # Count as code if not only a comment
-                code_lines += 1
+        
+
+        if possible_function and stripped_line == "{":
+            functions += 1
+            code_lines += 1
+            possible_function = False
             continue
 
         if stripped_line and not stripped_line.startswith("//"):
             code_lines += 1
-            if (" public " in stripped_line or stripped_line.startswith("public ") or
-                " private " in stripped_line or stripped_line.startswith("private ") or
-                " protected " in stripped_line or stripped_line.startswith("protected ") or
-                " static " in stripped_line or stripped_line.startswith("static ")) and "(" in stripped_line and ")" in stripped_line and "{" in stripped_line:
-                functions += 1
+            method_pattern = re.compile(r'\b(public|private|protected|static)?\s*(\w+)\s+(\w+)\s*\(([^)]*)\)\s*{?')
+            
+            methods = method_pattern.findall(stripped_line)
+            if methods:
+                for match in methods:
+                    if "{" in stripped_line[stripped_line.index(match[0]):]:  # Check if the line contains a function
+                        functions += 1
+                    else:
+                        possible_function = True
 
     total_comments = javadoc_comments + single_line_comments + multi_line_comments
     loc = total_lines
@@ -74,6 +108,8 @@ def analyze_java_file(file_path):
         'Function Count': functions,
         'Comment Deviation Percentage': comment_deviation_percentage,
     }
+
+
 
 
 def analyze_java_files_in_directory(directory_path, repo_url):
