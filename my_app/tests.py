@@ -14,6 +14,8 @@ from my_app.services.java_analyzer import analyze_java_file
 from my_app.services.java_analyzer import is_class_file
 from my_app.services.java_analyzer import analyze_java_files_in_directory
 
+from my_app.services.repo_analyzer import delete_repo, delete_all_repos
+
 from my_app.models import Repository, JavaDosyasi
 
 
@@ -303,6 +305,26 @@ class RepoAnalyzerTest(unittest.TestCase):
 
         self.assertEqual(JavaDosyasi.objects.filter(depo=repository).count(), 1)
         self.assertEqual(JavaDosyasi.objects.get(depo=repository).sinif_adi, 'NewFile.java')
+        
+    def test_delete_existing_repo(self):
+        self.repo_url = 'https://github.com/example/repo'
+        self.repo = Repository.objects.create(url=self.repo_url)
+        self.assertTrue(delete_repo(self.repo_url))
+        self.assertFalse(Repository.objects.filter(url=self.repo_url).exists())
+
+    def test_delete_nonexistent_repo(self):
+        self.repo_url = 'https://github.com/example/repo'
+        self.repo = Repository.objects.create(url=self.repo_url)
+        nonexistent_url = 'https://github.com/nonexistent/repo'
+        self.assertFalse(delete_repo(nonexistent_url))
+        
+    
+
+    def test_delete_all_repos(self):
+        self.repo1 = Repository.objects.create(url='https://github.com/example/repo1')
+        self.repo2 = Repository.objects.create(url='https://github.com/example/repo2')
+        delete_all_repos()
+        self.assertEqual(Repository.objects.count(), 0)
         
     
         
