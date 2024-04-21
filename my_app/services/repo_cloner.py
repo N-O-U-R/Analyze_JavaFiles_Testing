@@ -21,12 +21,19 @@ def repo_cloner(repo_url):
     
     os.makedirs(settings.CLONED_REPOS_DIR, exist_ok=True)
     destination = os.path.join(settings.CLONED_REPOS_DIR, repo_url.split('/')[-1])
+    try:
+        if os.path.exists(destination) and os.path.isdir(destination):
+            logging.info("This repository has already been cloned")
+        else:
+            git.Repo.clone_from(repo_url, destination)
+            logging.info("Repository cloned successfully!")
+    except Exception as e:
+        error_message = str(e)
+        if 'fatal: repository' in error_message and 'not found' in error_message:
+            return "Repository not found. Please check the provided repository URL."
+        else:
+            return "An error occurred while cloning the repository."
     
-    if os.path.exists(destination) and os.path.isdir(destination):
-        logging.info("This repository has already been cloned")
-    else:
-        git.Repo.clone_from(repo_url, destination)
-        logging.info("Repository cloned successfully!")
     return destination
 
 

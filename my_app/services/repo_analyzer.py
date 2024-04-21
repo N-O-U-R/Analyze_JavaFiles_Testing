@@ -11,8 +11,16 @@ def remove_readonly(func, path, exc_info):
     func(path)
 
 def repo_analyzer(repo_url):
-    destination = repo_cloner(repo_url) 
-    analyze_java_files_in_directory(destination, repo_url)
+    destination = repo_cloner(repo_url)
+    if destination == "Invalid URL. Please provide a valid GitHub URL.":
+        return 0
+    elif destination == "Repository not found. Please check the provided repository URL.":
+        return 1
+    elif destination == "An error occurred while cloning the repository.":
+        return 2
+    
+    if analyze_java_files_in_directory(destination, repo_url) == False:
+        return False
     try:
         shutil.rmtree(destination, onerror=remove_readonly)
         print(f"Removed repo {destination}")

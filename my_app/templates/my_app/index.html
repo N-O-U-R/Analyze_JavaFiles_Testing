@@ -17,6 +17,15 @@
             <button type="submit" name="analyze">Analyze</button>
         </form>
 
+        {% for message in messages %}
+        <script>
+            window.onload = function() {
+                alert("{{ message }}");
+                window.location.href = window.location.href; // Refresh the page
+            };
+        </script>
+    {% endfor %}
+
         <!-- Action link for deleting all repositories -->
         <a href="?delete_all=true" class="action-button" style="background-color: red; color: white; padding: 10px; text-decoration: none; display: inline-block; margin-top: 20px;">Delete All Repositories</a>
 

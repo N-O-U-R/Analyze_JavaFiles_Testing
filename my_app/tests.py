@@ -43,6 +43,15 @@ class RepoAnalyzerTest(unittest.TestCase):
         self.assertEqual(result, destination)
 
 
+    @patch('my_app.services.repo_cloner.git.Repo.clone_from')
+    def test_clone_repository_not_found(self, mock_clone_from):
+        repo_url = 'https://github.com/example/repo'
+        mock_clone_from.side_effect = Exception("fatal: repository 'https://github.com/example/repo' not found")
+
+        result = repo_cloner(repo_url)
+
+        self.assertEqual(result, "Repository not found. Please check the provided repository URL.")
+
     @parameterized.expand([
         ("https://github.com/user/repo", True),
         ("https://github.com/user-name/repo-name", True),
