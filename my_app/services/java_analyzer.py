@@ -131,6 +131,5 @@ def analyze_java_files_in_directory(directory_path, repo_url):
                     fonksiyon_sayisi=analysis_results['Function Count'],
                     yorum_sapma_yuzdesi=analysis_results['Comment Deviation Percentage'],
                 )
-    print(f"All files in {repo_url} have been analyzed and saved to the database.")
 
 
