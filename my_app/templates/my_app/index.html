@@ -2,32 +2,34 @@
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Repository Analysis</title>
     <link rel="stylesheet" href="{% static 'my_app/styles.css' %}">
 </head>
-
 <body>
     <div class="container">
-
         {% block content %}
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}
-            <button type="submit">Analyze</button>
+            <button type="submit" name="analyze">Analyze</button>
         </form>
+
+        <!-- Action link for deleting all repositories -->
+        <a href="?delete_all=true" class="action-button" style="background-color: red; color: white; padding: 10px; text-decoration: none; display: inline-block; margin-top: 20px;">Delete All Repositories</a>
 
         <ul>
             {% for repo in repositories %}
-            <li><a href="{% url 'repo_details' repo.url %}">{{ repo.url }}</a></li>
+            <li>
+                <a href="{% url 'repo_details' repo.url %}">{{ repo.url }}</a>
+                <!-- Action link for deleting individual repository -->
+                <a href="?delete={{ repo.url }}" class="action-button delete" style="background-color: red; color: white; padding: 5px 10px; text-decoration: none; display: inline-block; margin-left: 10px;">Delete</a>
+            </li>
             {% endfor %}
         </ul>
         {% endblock %}
-
     </div>
 </body>
-
 </html>

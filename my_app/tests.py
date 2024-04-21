@@ -1,5 +1,6 @@
 import unittest
-from unittest.mock import mock_open, patch
+from unittest.mock import mock_open, patch, MagicMock
+
 import os
 import re
 from parameterized import parameterized
@@ -7,10 +8,13 @@ from django.conf import settings
 from faker import Faker
 import tempfile
 
+
 from my_app.services.repo_cloner import repo_cloner
 from my_app.services.java_analyzer import analyze_java_file
 from my_app.services.java_analyzer import is_class_file
 from my_app.services.java_analyzer import analyze_java_files_in_directory
+
+from my_app.models import Repository, JavaDosyasi
 
 
 class RepoAnalyzerTest(unittest.TestCase):
@@ -243,3 +247,64 @@ class RepoAnalyzerTest(unittest.TestCase):
             self.assertEqual(results['Comment Deviation Percentage'], -100)
         os.unlink(tmp.name)
     
+    
+    
+    
+    @patch('os.walk')
+    @patch('my_app.services.java_analyzer.analyze_java_file')
+    @patch('my_app.services.java_analyzer.is_class_file', return_value=True)
+    def test_new_data_creation(self,mock_is_class_file, mock_analyze_java_file, mock_os_walk):
+        self.fake = Faker()
+        repo_url = self.fake.uri()
+        directory_path = settings.CLONED_REPOS_DIR
+        
+        mock_os_walk.return_value = [("", [], ["file1.java", "file2.java"])]
+        mock_analyze_java_file.return_value = {
+            'Javadoc Comment Lines': 1,
+            'Single-line Comment Lines': 2,
+            'Multi-line Comment Lines': 3,
+            'Code Lines': 4,
+            'Total Lines (LOC)': 5,
+            'Function Count': 6,
+            'Comment Deviation Percentage': 7,
+        }
+        
+        analyze_java_files_in_directory(directory_path, repo_url)
+        
+        repository = Repository.objects.get(url=repo_url)
+        java_files = JavaDosyasi.objects.filter(depo=repository)
+        self.assertIsNotNone(repository)
+        self.assertEqual(java_files.count(), 2)
+        for java_file in java_files:
+            self.assertEqual(java_file.yorum_sapma_yuzdesi, 7)
+            self.assertEqual(java_file.toplam_satir_sayisi, 5)
+
+        mock_is_class_file.assert_called()
+        mock_analyze_java_file.assert_called()
+        
+        
+    
+    def test_old_data_deletion(self):
+        self.fake = Faker()
+        repo_url = self.fake.uri()
+        directory_path = settings.CLONED_REPOS_DIR
+        
+        repository = Repository.objects.create(url=repo_url)
+        JavaDosyasi.objects.create(depo=repository, sinif_adi='OldFile.java', kod_satir_sayisi=100)
+
+        with patch('os.walk') as mock_walk, \
+             patch('builtins.open', new_callable=mock_open, read_data='public class NewTest {}'), \
+             patch('my_app.services.java_analyzer.is_class_file', return_value=True), \
+             patch('my_app.services.java_analyzer.analyze_java_file', return_value={'Javadoc Comment Lines': 0, 'Single-line Comment Lines': 0, 'Multi-line Comment Lines': 0, 'Code Lines': 10, 'Total Lines (LOC)': 10, 'Function Count': 1, 'Comment Deviation Percentage': 0}) as mock_analyze:
+            
+            mock_walk.return_value = [(directory_path, [], ['NewFile.java'])]
+
+            analyze_java_files_in_directory(directory_path, repo_url)
+
+        self.assertEqual(JavaDosyasi.objects.filter(depo=repository).count(), 1)
+        self.assertEqual(JavaDosyasi.objects.get(depo=repository).sinif_adi, 'NewFile.java')
+        
+    
+        
+    
+        

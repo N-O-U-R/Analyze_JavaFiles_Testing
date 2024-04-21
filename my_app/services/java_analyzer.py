@@ -30,9 +30,9 @@ def analyze_java_file(file_path):
     for line in lines:
         stripped_line = line.strip()
 
-        if "//" in stripped_line and not in_multi_line_comment and not in_javadoc_comment:  # Check for inline single-line comments
+        if "//" in stripped_line and not in_multi_line_comment and not in_javadoc_comment:
             single_line_comments += 1
-            if not stripped_line.startswith("//"):  # Count as code if not only a comment
+            if not stripped_line.startswith("//"):  
                 code_lines += 1
             continue
 
@@ -49,24 +49,24 @@ def analyze_java_file(file_path):
 
         elif stripped_line.startswith("/**") and not in_multi_line_comment:
             in_javadoc_comment = True
-            continue  # Skip the opening of Javadoc comments
+            continue  
         elif stripped_line.startswith("/*") and not in_javadoc_comment:
             in_multi_line_comment = True
-            continue  # Skip the opening of multiline comments
+            continue  
         
 
         elif in_javadoc_comment:
             javadoc_comments += 1
             if stripped_line.endswith("*/"):
                 in_javadoc_comment = False
-                javadoc_comments -= 1  # Do not count the closing tag of Javadoc
+                javadoc_comments -= 1  
             continue
 
         elif in_multi_line_comment:
             multi_line_comments += 1
             if stripped_line.endswith("*/"):
                 in_multi_line_comment = False
-                multi_line_comments -= 1  # Do not count the closing tag of multiline comments
+                multi_line_comments -= 1  
             continue
 
         
@@ -84,7 +84,7 @@ def analyze_java_file(file_path):
             methods = method_pattern.findall(stripped_line)
             if methods:
                 for match in methods:
-                    if "{" in stripped_line[stripped_line.index(match[0]):]:  # Check if the line contains a function
+                    if "{" in stripped_line[stripped_line.index(match[0]):]:  
                         functions += 1
                     else:
                         possible_function = True

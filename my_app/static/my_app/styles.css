@@ -53,6 +53,9 @@ ul li {
     background-color: #f9f9f9;
     border: 1px solid #eee;
     margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 ul li a {
@@ -63,3 +66,20 @@ ul li a {
 ul li:hover {
     background-color: #efefef;
 }
+
+
+/* More specific selector for delete buttons */
+ul li form button.delete {
+    background-color: red;
+    color: white;
+    padding: 15px 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    min-width: 60px;
+    width: auto;
+    margin-left: 10px;
+    float: right;
+}
+
+
